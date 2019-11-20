@@ -6,11 +6,11 @@ Calculate the price of a bond after discount, or calculate yield to maturity rat
 
 ![image](https://raw.githubusercontent.com/hcl212/Bond-Yield-Calculator/master/screenshot.png)
 
-### Prerequisites
+## Prerequisites
 
 JRE 1.0.0
 
-### Installing
+## Installing
 
 ### Windows Required
 Download the 'BondYieldCalculator.exe' file.  
