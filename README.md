@@ -4,7 +4,7 @@ Calculate the price of a bond after discount, or calculate yield to maturity rat
 
 ## Screenshot
 
-![image](https://raw.githubusercontent.com/hcl212/Bond-Yield-Calculator/master/screenshot.png)
+![image](https://raw.githubusercontent.com/hcl212/Bond-Yield-Calculator/master/screenshott.png)
 
 ## Prerequisites
 
