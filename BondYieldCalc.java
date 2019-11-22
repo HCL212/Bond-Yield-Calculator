@@ -2,33 +2,53 @@ import javax.swing.*;
 import java.util.*;
 import java.awt.*;
 import java.awt.event.*;
-class Calc{
+import java.math.*;
+
+class BondYieldCalc{
     ArrayList<JTextField> priceFields = new ArrayList<>();
     ArrayList<JTextField> yieldFields = new ArrayList<>();
 
     public static void main(String args[]){  
-        Calc demo = new Calc();
+        BondYieldCalc demo = new BondYieldCalc();
         demo.createWindow();
     }
-    
+
+    // function to calculate value to the nearest Nth place
+    double roundValueToNthPlace(double value, int places) {
+        if (places < 0) throw new IllegalArgumentException();
+
+        BigDecimal bd = new BigDecimal(Double.toString(value));
+        bd = bd.setScale(places, RoundingMode.HALF_UP);
+        return bd.doubleValue();
+    }
+
     double calculatePrice() {
+        // retrieve values from the arraylist
         double coupon = Double.parseDouble(priceFields.get(0).getText());
         int years = Integer.parseInt(priceFields.get(1).getText());
         double face = Double.parseDouble(priceFields.get(2).getText());
         double rate = Double.parseDouble(priceFields.get(3).getText());
 
+        // calculate discount price, discount rate
         double discPrice = coupon*face;
         double disc = 1 + rate;
         double solution = 0;   
 
-        solution += ((face) / Math.pow(disc, years));
-        for (int i = 1; i <= years; i++) {
+        // add the end of the formula first (ie: 1000/1.15^5 + 100/1.15^5)
+        // loop through n-1
+        solution += ((face) / Math.pow(disc, years) + (discPrice) / Math.pow(disc, years));
+        for (int i = 1; i < years; i++) {
             solution += (discPrice / Math.pow(disc, i));
         }
         
-        return solution;
+        // return solution to the nearest 7th place
+        return roundValueToNthPlace(solution, 7);
     }
 
+    // helper function used by calculate yield
+    // since if I use the calculatePrice function
+    // the elements inside arraylist get altered
+    // same as above, but takes in arraylist argument
     double calculatePrice(ArrayList<String> x) {
         double coupon = Double.parseDouble(x.get(0));
         int years = Integer.parseInt(x.get(1));
@@ -39,20 +59,23 @@ class Calc{
         double disc = 1 + rate;
         double solution = 0;   
 
-        solution += ((face) / Math.pow(disc, years));
-        for (int i = 1; i <= years; i++) {
+        solution += ((face) / Math.pow(disc, years) + (discPrice) / Math.pow(disc, years));
+        for (int i = 1; i < years; i++) {
             solution += (discPrice / Math.pow(disc, i));
         }
         
-        return solution;
+        return roundValueToNthPlace(solution, 7);
     }
 
     double calculateYield() {
+        // retrieve values from arraylist
         double coupon = Double.parseDouble(yieldFields.get(0).getText());
         int years = Integer.parseInt(yieldFields.get(1).getText());
         double face = Double.parseDouble(yieldFields.get(2).getText());
         double price = Double.parseDouble(yieldFields.get(3).getText()); 
 
+        // calculte discount investor gets
+        // calculate discount price
         double discForInvestor = face - price;
         double discPrice = coupon*face;
         double solution = 0;
@@ -60,6 +83,7 @@ class Calc{
         // approximate yield to maturity
         solution = (((discPrice) + (discForInvestor/years)) / ((face+price)/2));
 
+        // create temporary arraylist for price calculation
         ArrayList<String> tempList = new ArrayList<>();
 
         String couponP = String.valueOf(coupon);
@@ -72,6 +96,8 @@ class Calc{
         tempList.add(faceP);
         tempList.add(rateP);
        
+        // use set to determine how close we got to the answer
+        // if duplicate, break the loop and return answer
         Set<Double> set = new HashSet<>();
         double maxDiff = .00000001;
 
@@ -90,26 +116,31 @@ class Calc{
             set.add(solution);
         }
         
-        return solution;
+        return roundValueToNthPlace(solution, 7);
     }
 
     void createWindow() {
+        // window layout
         JFrame frame = new JFrame("Bond Yield Calculator by Hugh Leow");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLocationRelativeTo(null);
-        frame.setSize(700,350);
+        frame.setSize(700,370);
         frame.setResizable(false);
 
+        // two panels for both calculators inside a container
+        // container is inside window
         JPanel container = new JPanel();
         JPanel price = new JPanel();
         price.setLayout(new BoxLayout(price, BoxLayout.PAGE_AXIS));
         JPanel yield = new JPanel();
         yield.setLayout(new BoxLayout(yield, BoxLayout.PAGE_AXIS));        
 
+        // add calculator panels to container
         container.setLayout(new GridLayout(1,2));
         container.add(price);
         container.add(yield);
 
+        // add container to window
         frame.getContentPane().add(container);
 
         // calculate price components
@@ -139,8 +170,22 @@ class Calc{
         JLabel priceSolution = new JLabel("Answer");
         priceSolution.setAlignmentX(JLabel.CENTER_ALIGNMENT);
 
+        JButton clearPriceButton = new JButton("Clear inputs");
         JButton calculatePriceButton = new JButton("Calculate Price");
 
+        // clear inputs button
+        clearPriceButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                couponPriceText.setText("");
+                yearsPriceText.setText("");
+                valuePriceText.setText("");
+                ratePriceText.setText("");
+                priceSolution.setText("");
+            }
+        });
+
+        // calculate price button listener
         calculatePriceButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -149,6 +194,7 @@ class Calc{
             }
         });
 
+        // add components to calculate price panel
         price.add(titlePrice);
         price.add(Box.createRigidArea(new Dimension(0, 40)));        
         price.add(couponPriceLabel);
@@ -161,7 +207,8 @@ class Calc{
         price.add(ratePriceText);
         price.add(Box.createRigidArea(new Dimension(0, 30))); 
         price.add(priceSolution);
-        price.add(Box.createRigidArea(new Dimension(0, 30)));
+        price.add(Box.createRigidArea(new Dimension(0, 20)));
+        price.add(clearPriceButton);
         price.add(calculatePriceButton);
 
         // calculate yield components
@@ -191,8 +238,22 @@ class Calc{
         JLabel yieldSolution = new JLabel("Answer");
         yieldSolution.setAlignmentX(JLabel.CENTER_ALIGNMENT);
 
+        JButton clearYieldButton = new JButton("Clear inputs");
         JButton calculateYieldButton = new JButton("Calculate Yield");
 
+        // clear inputs button
+        clearYieldButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                couponYieldText.setText("");
+                yearsYieldText.setText("");
+                valueYieldText.setText("");
+                priceYieldText.setText("");
+                yieldSolution.setText("");
+            }
+        });
+
+        // calculate yield button listener
         calculateYieldButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -201,6 +262,7 @@ class Calc{
             }
         });
 
+        // add yield components to calculate yield panel
         yield.add(titleYield);
         yield.add(Box.createRigidArea(new Dimension(0, 40)));        
         yield.add(couponYieldLabel);
@@ -213,7 +275,8 @@ class Calc{
         yield.add(priceYieldText);
         yield.add(Box.createRigidArea(new Dimension(0, 30)));  
         yield.add(yieldSolution);
-        yield.add(Box.createRigidArea(new Dimension(0, 30)));
+        yield.add(Box.createRigidArea(new Dimension(0, 20)));
+        yield.add(clearYieldButton);
         yield.add(calculateYieldButton);
 
         frame.setVisible(true);        
